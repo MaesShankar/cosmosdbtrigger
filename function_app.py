@@ -43,10 +43,10 @@ def cosmosdb_trigger(azeventhub: func.EventHubEvent):
         # Insert the document into Cosmos DB
         container_client.upsert_item(document)
 
-        logging.info('Data inserted into Cosmos DB: %s', document)
+        print('Data inserted into Cosmos DB: %s', document)
 
     except Exception as e:
-        logging.error('Error processing event: %s', str(e))
+        print('Error processing event: %s', str(e))
 
 # Entry point for the Azure Function
 if __name__ == "__main__":
