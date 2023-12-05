@@ -8,66 +8,70 @@ import logging
 cosmosdb_endpoint = "https://roboticscosmos.documents.azure.com:443/"
 cosmosdb_key = "sayBm6h6QCxtZn9CVspvKoKLPpflmKqrTiIWUcrZz3uo8s7fq39tVxLt20cwaWhcBMTB2bssrbwqACDbDid1Tw=="
 cosmosdb_database_name = "robotics"
-cosmosdb_container_name = "temperaturecontainer"
+cosmosdb_container_name = "PLC_Data"
 
 cosmos_client = CosmosClient(cosmosdb_endpoint, cosmosdb_key)
 database_client = cosmos_client.get_database_client(cosmosdb_database_name)
 container_client = database_client.get_container_client(cosmosdb_container_name)
 
-
 app = func.FunctionApp()
 
 @app.function_name(name="iothub-trigger")
-@app.event_hub_message_trigger(arg_name="robohub", event_hub_name="iothub-ehub-iothubshan-25363424-574e2f9473",
+@app.event_hub_message_trigger(arg_name="robohub", event_hub_name="iothub-ehub-shankarhub-25384865-eae4bd5211",
                                connection="iotHub") 
 
-# def robo_trigger(robohub: func.EventHubEvent):
-#     logging.info('Python EventHub trigger processed an event: %s',
-#                 robohub.get_body().decode('utf-8')) 
-
-
-
+# @app.event_hub_message_trigger(arg_name="robohub", event_hub_name="iothub-ehub-iothub-rob-25330811-5c50f3e599",
+#                                connection="iotHub")
 def cosmosdb_trigger(robohub: func.EventHubEvent):
-    print("start function")
 
     try:
         # Parse the JSON data from the Event Hub event
         json_data_str = robohub.get_body().decode('utf-8')
         json_data = json.loads(json_data_str)
-        print('Python EventHub trigger processed an event: %s', json_data)
-        # Python EventHub trigger processed an event: %s {'machine': {'temperature': 104.53948152349868, 'pressure': 10.51715612293023}, 'ambient': {'temperature': 20.860264751475583, 'humidity': 24}, 'timeCreated': '2023-11-29T09:52:12.8191216Z'}
+        print('Trigger Received: %s', json_data)
+        
+        if 'id' not in json_data:
+            json_data['id'] = str(uuid.uuid4())  # Generate a unique identifier
 
-        # if 'id' not in json_data:
-        #     json_data['id'] = str(uuid.uuid4())  # Generate a unique identifier
-        # if 'tempid' not in json_data:
-        #     json_data['tempid'] = "SimulatedTemp"  # Generate a unique identifier
-
-        # machine_temperature = json_data['machine']['temperature']
-        # print(type(machine_temperature))
-        # machine_pressure = json_data['machine']['pressure']
-        # print(type(machine_pressure))
-        # ambient_temperature = json_data['ambient']['temperature']
-        # print(type(ambient_temperature))
-        # ambient_humidity = json_data['ambient']['humidity']
-        # print(type(ambient_humidity))
-        # time_created = json_data['timeCreated']
-        # print(type(time_created))
-
-        # # Create a document to be inserted into Cosmos DB
-        # document = {
-        #     'id': json_data['id'],
-        #     'tempid': json_data['tempid'],
-        #     'machine_temperature': machine_temperature,
-        #     'machine_pressure': machine_pressure,
-        #     'ambient_temperature': ambient_temperature,
-        #     'ambient_humidity': ambient_humidity,
-        #     'time_created': time_created
-        # }
-
-        # # Insert the document into Cosmos DB
-        # container_client.upsert_item(document)
-
-        # print('Data inserted into Cosmos DB: %s', document)
+        # Check the DeviceId to determine which data structure to use
+        if json_data['DeviceId'] == 'WeatherStationModbus':
+            print("WeatherStationModbus")
+            # Handle WeatherStationModbus data
+            document = {
+                "id": json_data['id'],
+                'DeviceId': json_data['DeviceId'],
+                'brightness': json_data['brightness'],
+                'windspeed': json_data['windspeed'],
+                'temperature': json_data['temperature'],
+                'humidity': json_data['humidity'],
+            }
+        elif json_data['DeviceId'] == 'UnilogicPLC_OPC':
+            print("UnilogicPLC_OPC")
+            # Handle UnilogicPLC_OPC data
+            document = {
+                "id": json_data['id'],
+                'DeviceId': json_data['DeviceId'],
+                'temperature': json_data['Temperature'],
+            }
+        elif json_data['DeviceId'] == 'EnergyMonitoring':
+            print("EnergyMonitoring")
+            # Handle EnergyMonitoring data
+            document = {
+                "id": json_data['id'],
+                'DeviceId': json_data['DeviceId'],
+                'voltages': json_data['voltages'],
+                'currents': json_data['currents'],
+                'active_power': [abs(value) for value in json_data['active_power']],
+            }
+        else:
+            print(f"Unknown DeviceId: {json_data['DeviceId']}")
+                        
+        
+        # Insert the document into Cosmos DB
+        container_client = database_client.get_container_client(cosmosdb_container_name)
+        container_client.upsert_item(document)
+        print(f"Data inserted into Cosmos DB for {json_data['DeviceId']}: {document}")
+        
 
     except Exception as e:
         print('Error processing event: %s', e)
