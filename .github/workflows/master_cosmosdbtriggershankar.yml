@@ -70,6 +70,6 @@ jobs:
           app-name: 'CosmosDbTriggerShankar'
           slot-name: 'Production'
           package: ${{ env.AZURE_FUNCTIONAPP_PACKAGE_PATH }}
-          publish-profile: ${{ secrets.AZUREAPPSERVICE_PUBLISHPROFILE_93F2B865DFA64D1F9AC8C0732551BE3E }}
+          publish-profile: ${{ secrets.AZUREAPPSERVICE_PUBLISHPROFILE_CDFA8F2C6B774747B3B6E09136A109CF }}
           scm-do-build-during-deployment: true
           enable-oryx-build: true
