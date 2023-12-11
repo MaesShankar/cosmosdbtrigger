@@ -63,6 +63,10 @@ def cosmosdb_trigger(robohub: func.EventHubEvent):
                 'currents': json_data['currents'],
                 'active_power': [abs(value) for value in json_data['active_power']],
             }
+        elif json_data['DeviceId'] == 'LORA':
+            print("LORA")
+            # Handle LORA data
+            document = json_data
         else:
             print(f"Unknown DeviceId: {json_data['DeviceId']}")
                         
